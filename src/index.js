@@ -1,9 +1,14 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, merge } from 'ramda';
+import { partial, merge, partialRight, ifElse, is } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
+
+import {
+  registerHook,
+  getHooks
+} from './hooks';
 
 /**
  * Return host from options or default host
@@ -65,6 +70,16 @@ function buildConnectionUrl(options) {
 }
 
 /**
+ * Create collection in database
+ *
+ * @param { MongoClient.Db }  db              Instance if database
+ * @param { String }          collectionName  Name of collection
+ */
+function createCollection(db, collectionName) {
+  return db.createCollection(collectionName);
+}
+
+/**
  * Return Query Interface
  *
  * @access  private
@@ -73,6 +88,57 @@ function buildConnectionUrl(options) {
  */
 function QueryFactory(db, collectionName) {
   const query = {};
+
+  /**
+   * Return executor
+   */
+  function ExecuteFactory(queryFunc, hookName) {
+    return {
+      exec: function() {
+        return Promise.resolve(queryFunc());
+      },
+    };
+  }
+
+  /**
+   * Create one document
+   *
+   * @access  private
+   */
+  function createOne(doc, opts) {
+    return function() {
+      return Promise.resolve(doc)
+        .then(
+          partialRight(db[collectionName].insertOne, opts)
+        );
+    };
+  }
+
+  /**
+   * Create many documents
+   *
+   * @access  private
+   */
+  function createMany(docs, opts) {
+    return function() {
+      return Promise.resolve(docs)
+        .then(
+          partialRight(db[collectionName].insertMany, opts)
+        );
+    };
+  }
+
+  /**
+   * Create one or many documents in database
+   */
+  query.insert = function(docs, opts) {
+    return ExecuteFactory(ifElse(
+      is(Array, docs),
+      createMany(docs, opts),
+      createOne(docs, opts)
+    )(docs), 'beforeCreate');
+  };
+
 
   return query;
 }
@@ -84,7 +150,7 @@ export function Factory(options) {
   const adapter = {};
 
   adapter.query = function(db, collectionName) {
-    return QueryFactory.call(this, db, collectionName);
+    return QueryFactory(db, collectionName);
   };
 
   adapter.close = function(db) {

@@ -119,8 +119,8 @@
             "beforeColon": false,
             "afterColon": true
         }],
-        "new-cap": [2, {
-            "newIsCap": true
+        "new-cap": [0, {
+            "newIsCap": false
         }],
         "no-multiple-empty-lines": [2, {
             "max": 2

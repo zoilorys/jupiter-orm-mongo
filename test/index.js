@@ -7,32 +7,33 @@ import { Db } from 'mongodb';
 import { Factory } from '../src/index';
 
 describe('API spec', function() {
-  const testAdapter = Factory();
+  const Adapter = Factory();
 
   it('Adapter object API', function() {
-    expect(testAdapter).to.have.all.keys('connect', 'close', 'query');
+    expect(Adapter).to.have.all.keys('connect', 'close', 'query');
 
     [
-      testAdapter.connect,
-      testAdapter.close,
-      testAdapter.query,
+      Adapter.connect,
+      Adapter.close,
+      Adapter.query,
     ].forEach(function(func) {
       expect(func).to.be.ok.and.to.be.a('function');
     });
   });
 
-  //
-  // xit('Query object API', function() {
-  //   expect(testQuery).to.have.all.keys('find', 'insert');
-  //
-  //   [
-  //     testQuery.find,
-  //     testQuery.insert,
-  //   ].forEach(function(func) {
-  //     expect(func).to.be.ok.and.to.be.a('function');
-  //   });
-  // });
-  //
+
+  it('Query object API', function() {
+    const Query = Factory().query();
+
+    expect(Query).to.have.all.keys('insert');
+
+    [
+      Query.insert,
+    ].forEach(function(func) {
+      expect(func).to.be.ok.and.to.be.a('function');
+    });
+  });
+
   // xit('Find and Insert objects API', function() {
   //   const testFinder = testQuery.find();
   //   const testInserter = testQuery.insert();
@@ -62,5 +63,30 @@ describe('Connection behavoir', function() {
       expect(adapter.getDatabase()).to.be.instanceof(Db);
       adapter.close().catch(done).then(done);
     });
+  });
+});
+
+describe('Create documents', function() {
+  const Adapter = Factory();
+
+  before(function(done) {
+    Adapter.connect().catch(done).then(function() {
+      done();
+    });
+  });
+
+  it('should return Promise', function() {
+    const Query = Adapter.query('orm_test');
+
+    console.log(
+      'query',
+      Query.insert({
+        key: 'value'
+      })
+    );
+
+    // expect(Query.insert({
+    //   key: 'value'
+    // }).exec()).to.be.instanceof(Promise);
   });
 });
