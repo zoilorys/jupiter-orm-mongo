@@ -1,7 +1,7 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, concat } from 'ramda';
+import { partial, merge } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
 
@@ -34,7 +34,9 @@ function getPort(port) {
  * @param   { String }  auth.password   Password for user authentication
  */
 function getAuth(auth) {
-  return auth ? auth.user + (auth.password ? ':' + auth.password : '' ) : null;
+  const password = auth && auth.password ? ':' + auth.password : '';
+
+  return auth ? auth.user + password : null;
 }
 
 /**
@@ -58,7 +60,7 @@ function buildConnectionUrl(options) {
     protocol: 'mongodb://',
     hostname: getHost(options.host),
     port: getPort(options.port),
-    auth: getAuth(options.auth)
+    auth: getAuth(options.auth),
   });
 }
 
@@ -82,16 +84,17 @@ export function Factory(options) {
   const adapter = {};
 
   adapter.query = function(db, collectionName) {
-    return QueryFactory.apply(this, arguments);
-  }
+    return QueryFactory.call(this, db, collectionName);
+  };
 
   adapter.close = function(db) {
     return db.close();
   };
 
   adapter.connect = function(opts) {
-    return MongoClient.connect(buildConnectionUrl(options)).then(function(db) {
-
+    return MongoClient.connect(
+      buildConnectionUrl(merge(options, opts))
+    ).then(function(db) {
       adapter.getDatabase = function() {
         return db;
       };
@@ -101,7 +104,7 @@ export function Factory(options) {
 
       return adapter;
     });
-  }
+  };
 
   return adapter;
 }
