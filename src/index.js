@@ -136,7 +136,7 @@ function QueryFactory(db, collectionName) {
       is(Array, docs),
       createMany(docs, opts),
       createOne(docs, opts)
-    )(docs), 'beforeCreate');
+    )(docs), 'create');
   };
 
 
