@@ -78,15 +78,8 @@ describe('Create documents', function() {
   it('should return Promise', function() {
     const Query = Adapter.query('orm_test');
 
-    console.log(
-      'query',
-      Query.insert({
-        key: 'value'
-      })
-    );
-
-    // expect(Query.insert({
-    //   key: 'value'
-    // }).exec()).to.be.instanceof(Promise);
+    expect(Query.insert({
+      key: 'value'
+    }).exec()).to.be.instanceof(Promise);
   });
 });
