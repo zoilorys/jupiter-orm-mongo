@@ -1,52 +1,22 @@
-export function hooksManager() {
+import { isEmpty } from 'ramda';
+
+function hooksManager() {
   const hooks = {
     create: {
-      before: [
-        function(value) {
-          return value;
-        }
-      ],
-      after: [
-        function(value) {
-          return value;
-        }
-      ],
+      before: [],
+      after: [],
     },
     update: {
-      before: [
-        function(value) {
-          return value;
-        }
-      ],
-      after: [
-        function(value) {
-          return value;
-        }
-      ],
+      before: [],
+      after: [],
     },
     find: {
-      before: [
-        function(value) {
-          return value;
-        }
-      ],
-      after: [
-        function(value) {
-          return value;
-        }
-      ],
+      before: [],
+      after: [],
     },
     delete: {
-      before: [
-        function(value) {
-        return value;
-        }
-      ],
-      after: [
-        function(value) {
-          return value;
-        }
-      ],
+      before: [],
+      after: [],
     },
   };
 
@@ -61,12 +31,19 @@ export function hooksManager() {
   controller.execHooks = function(prefix) {
     return function(suffix) {
       return function(value) {
-        return hooks[prefix][suffix].reduce(function(value, func) {
-          return func(value);
-        }, value);
+        return isEmpty(hooks[prefix][suffix]) ? value : hooks[prefix][suffix]
+          .reduce(function(value, func) {
+            return func(value);
+          }, value);
       };
     };
   };
+
+  controller.clearHooks = function(name) {
+    const args = name.split(' ');
+    hooks[args[0]][args[1]].length = 0;
+    return this;
+  }
 
   return controller;
 };
