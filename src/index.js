@@ -63,6 +63,7 @@ function buildConnectionUrl(options) {
     slashes: true,
     hostname: getHost(options.host),
     port: getPort(options.port),
+    path: options.database,
     //auth: getAuth(options.auth),
   });
 }
@@ -293,7 +294,7 @@ export function Factory(options) {
 
   adapter.connect = function() {
     return MongoClient.connect(
-      buildConnectionUrl(options) + '/' + options.database
+      buildConnectionUrl(options)
     ).then(function(db) {
 
       adapter.getDatabase = function() {
