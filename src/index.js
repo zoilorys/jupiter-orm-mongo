@@ -1,14 +1,11 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, merge, partialRight, ifElse, is } from 'ramda';
+import { partial, partialRight, ifElse, is } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
 
-import {
-  registerHook,
-  getHooks
-} from './hooks';
+import { hooks } from './hooks';
 
 /**
  * Return host from options or default host
@@ -57,15 +54,16 @@ function getAuth(auth) {
  * password options
  */
 function buildConnectionUrl(options) {
-  if (options.user && options.password) {
+  /*if (options.user && options.password) {
     options.auth = options.user + ':' + options.password;
-  }
+  }*/
 
   return formatUrl({
-    protocol: 'mongodb://',
+    protocol: 'mongodb',
+    slashes: true,
     hostname: getHost(options.host),
     port: getPort(options.port),
-    auth: getAuth(options.auth),
+    //auth: getAuth(options.auth),
   });
 }
 
@@ -95,10 +93,59 @@ function QueryFactory(db, collectionName) {
   function ExecuteFactory(queryFunc, hookName) {
     return {
       exec: function() {
-        return Promise.resolve(queryFunc());
+        return queryFunc()
+          .then(hooks.execHooks(hookName)('after'));
       },
     };
   }
+
+  /**
+   * Find one document
+   *
+   * @access private
+   */
+  function findOne(queryObj, opts) {
+    return function() {
+      return Promise.resolve(queryObj)
+        .then(hooks.execHooks('find')('before'))
+        .then(function(data) {
+          return db.collection(collectionName).findOne(data, opts ? opts : {});
+        });
+    };
+  }
+
+  /**
+   * Find many documents
+   *
+   * @access private
+   */
+  function find(queryObj, opts) {
+    return function() {
+      return Promise.resolve(queryObj)
+        .then(hooks.execHooks('find')('before'))
+        .then(function(data) {
+          return db.collection(collectionName).find(data, opts ? opts : {});
+        })
+        .then(function(cursor) {
+          return cursor.toArray();
+        });
+    };
+  }
+
+  /**
+   * Find one document in database
+   */
+  query.findOne = function(queryObj, opts) {
+    return ExecuteFactory(findOne(queryObj, opts), 'find');
+  };
+
+  /**
+   * Find many documents in database
+   */
+  query.find = function(queryObj, opts) {
+    return ExecuteFactory(find(queryObj, opts), 'find');
+  };
+
 
   /**
    * Create one document
@@ -108,9 +155,10 @@ function QueryFactory(db, collectionName) {
   function createOne(doc, opts) {
     return function() {
       return Promise.resolve(doc)
-        .then(
-          partialRight(db[collectionName].insertOne, opts)
-        );
+        .then(hooks.execHooks('create')('before'))
+        .then(function(data) {
+          return db.collection(collectionName).insertOne(data, opts ? opts : {});
+        });
     };
   }
 
@@ -122,9 +170,10 @@ function QueryFactory(db, collectionName) {
   function createMany(docs, opts) {
     return function() {
       return Promise.resolve(docs)
-        .then(
-          partialRight(db[collectionName].insertMany, opts)
-        );
+        .then(hooks.execHooks('create')('before'))
+        .then(function(data) {
+          return db.collection(collectionName).insertMany(data, opts ? opts : {});
+        });
     };
   }
 
@@ -132,13 +181,98 @@ function QueryFactory(db, collectionName) {
    * Create one or many documents in database
    */
   query.insert = function(docs, opts) {
-    return ExecuteFactory(ifElse(
-      is(Array, docs),
-      createMany(docs, opts),
-      createOne(docs, opts)
-    )(docs), 'create');
+    return ExecuteFactory(
+      docs instanceof Array ? createMany(docs, opts) : createOne(docs, opts),
+      'create');
   };
 
+  /**
+   * Update one document
+   *
+   * @access  private
+   */
+  function updateOne(queryObj, updates, opts) {
+    return function() {
+      return Promise.resolve(queryObj)
+        .then(hooks.execHooks('update')('before'))
+        .then(function(data) {
+          return  db.collection(collectionName).updateOne(data, updates, opts ? opts : {});
+        });
+    };
+  }
+
+  /**
+   * Update many documents
+   *
+   * @access  private
+   */
+  function updateMany(queryObj, updates, opts) {
+    return function() {
+      return Promise.resolve(queryObj)
+        .then(hooks.execHooks('update')('before'))
+        .then(function(data) {
+          return  db.collection(collectionName).updateMany(data, updates, opts ? opts : {});
+        });
+    };
+  }
+
+  /**
+   * Update one document in database
+   */
+  query.updateOne = function(queryObj, updates, opts) {
+    return ExecuteFactory(updateOne(queryObj, updates, opts), 'update');
+  };
+
+  /**
+   * Update many documents in database
+   */
+  query.updateMany = function(queryObj, updates, opts) {
+    return ExecuteFactory(updateMany(queryObj, updates, opts), 'update');
+  };
+
+  /**
+   * Delete one document
+   *
+   * @access  private
+   */
+  function deleteOne(queryObj, opts) {
+    return function() {
+      return Promise.resolve(queryObj)
+        .then(hooks.execHooks('delete')('before'))
+        .then(function(data) {
+          return  db.collection(collectionName).deleteOne(data, opts ? opts : {});
+        });
+    };
+  }
+
+  /**
+   * Delete many documents
+   *
+   * @access  private
+   */
+  function deleteMany(queryObj, opts) {
+    return function() {
+      return Promise.resolve(queryObj)
+        .then(hooks.execHooks('delete')('before'))
+        .then(function(data) {
+          return  db.collection(collectionName).deleteMany(data, opts ? opts : {});
+        });
+    };
+  }
+
+  /**
+   * Delete one document in database
+   */
+  query.deleteOne = function(queryObj, opts) {
+    return ExecuteFactory(deleteOne(queryObj, opts), 'delete');
+  };
+
+  /**
+   * Delete many documents in database
+   */
+  query.deleteMany = function(queryObj, opts) {
+    return ExecuteFactory(deleteMany(queryObj, opts), 'delete');
+  };
 
   return query;
 }
@@ -157,10 +291,11 @@ export function Factory(options) {
     return db.close();
   };
 
-  adapter.connect = function(opts) {
+  adapter.connect = function() {
     return MongoClient.connect(
-      buildConnectionUrl(merge(options, opts))
+      buildConnectionUrl(options) + '/' + options.database
     ).then(function(db) {
+
       adapter.getDatabase = function() {
         return db;
       };
