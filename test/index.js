@@ -25,30 +25,20 @@ describe('API spec', function() {
   it('Query object API', function() {
     const Query = Factory().query();
 
-    expect(Query).to.have.all.keys('insert');
+    expect(Query).to.have.all.keys('insert', 'find', 'findOne', 'deleteOne', 'deleteMany', 'updateOne', 'updateMany');
 
     [
       Query.insert,
+      Query.find,
+      Query.findOne,
+      Query.updateOne,
+      Query.updateMany,
+      Query.deleteOne,
+      Query.deleteMany,
     ].forEach(function(func) {
       expect(func).to.be.ok.and.to.be.a('function');
     });
   });
-
-  // xit('Find and Insert objects API', function() {
-  //   const testFinder = testQuery.find();
-  //   const testInserter = testQuery.insert();
-  //   expect(testFinder).to.have.all.keys('exec', 'order', 'limit');
-  //   expect(testInserter).to.have.all.keys('exec');
-  //
-  //   [
-  //     testFinder.order,
-  //     testFinder.limit,
-  //     testFinder.exec,
-  //     testInserter.exec,
-  //   ].forEach(function(func) {
-  //     expect(func).to.be.ok.and.to.be.a('function');
-  //   });
-  // });
 });
 
 describe('Connection behavoir', function() {
@@ -59,7 +49,7 @@ describe('Connection behavoir', function() {
       port: 27017
     });
 
-    connectedFactory.connect().catch(done).then(function(adapter) {
+    connectedFactory.connect({}).catch(done).then(function(adapter) {
       expect(adapter.getDatabase()).to.be.instanceof(Db);
       adapter.close().catch(done).then(done);
     });
@@ -67,10 +57,12 @@ describe('Connection behavoir', function() {
 });
 
 describe('Create documents', function() {
-  const Adapter = Factory();
+  const Adapter = Factory({
+    database: 'test',
+  });
 
   before(function(done) {
-    Adapter.connect().catch(done).then(function() {
+    Adapter.connect({}).catch(done).then(function() {
       done();
     });
   });
@@ -81,5 +73,91 @@ describe('Create documents', function() {
     expect(Query.insert({
       key: 'value'
     }).exec()).to.be.instanceof(Promise);
+
+  });
+});
+
+describe('Read documents', function(done) {
+  const Adapter = Factory({
+    database: 'test',
+  });
+
+  before(function(done) {
+    Adapter.connect({}).catch(done).then(function() {
+      done();
+    });
+  });
+
+  it('should return Promise and be equal inserted data', function() {
+    const Query = Adapter.query('orm_test');
+
+    Query.find({
+      key: 'value'
+    }).exec().then(function(data) {
+      expect(data.key).to.be.ok.and.to.be.eql('value');
+      Adapter.close();
+      done();
+    })
+  });
+});
+
+describe('Update documents', function() {
+  const Adapter = Factory({
+    database: 'test',
+  });
+
+  before(function(done) {
+    Adapter.connect({}).catch(done).then(function() {
+      done();
+    });
+  });
+
+  it('should return Promise and data must be updated', function(done) {
+    const Query = Adapter.query('orm_test');
+
+    const result = Query.updateOne({
+      key: 'value',
+    }, {
+      $set: {
+        param: 'value',
+      }
+    }).exec();
+
+    expect(result).to.be.instanceof(Promise);
+
+    Adapter.query('orm_test').findOne({
+      key: 'value',
+    }, {}).exec().then(function(data) {
+      expect(data.key).to.be.ok.and.to.be.eql('value');
+      expect(data.param).to.be.ok.and.to.be.eql('value');
+      Adapter.close();
+      done();
+    })
+  });
+});
+
+describe('Delete documents', function() {
+  const Adapter = Factory({
+    database: 'test',
+  });
+
+  before(function(done) {
+    Adapter.connect({}).catch(done).then(function() {
+      done();
+    });
+  });
+
+  it('should return Promise and data must be deleted', function(done) {
+    const Query = Adapter.query('orm_test');
+
+    const result = Query.deleteMany({
+      key: 'value',
+    }).exec().then(function(data) {
+      expect(data.deletedCount).to.be.ok.and.to.be.eql(1);
+      Adapter.close();
+      done();
+    });
+
+    expect(result).to.be.instanceof(Promise);
   });
 });
