@@ -1,7 +1,6 @@
 
 import { expect } from 'chai';
 import { Promise } from 'es6-promise';
-
 import { Db } from 'mongodb';
 
 import { Factory } from '../src/index';
@@ -133,7 +132,7 @@ describe('Update documents', function() {
       expect(data.param).to.be.ok.and.to.be.eql('value');
       Adapter.close();
       done();
-    })
+    });
   });
 });
 
@@ -155,10 +154,56 @@ describe('Delete documents', function() {
       key: 'value',
     }).exec().then(function(data) {
       expect(data.deletedCount).to.be.ok.and.to.be.eql(1);
+      expect(result).to.be.instanceof(Promise);
       Adapter.close();
       done();
     });
+  });
+});
 
-    expect(result).to.be.instanceof(Promise);
+describe('Hooks test', function() {
+  const Adapter = Factory({
+    database: 'test',
+  });
+
+  before(function(done) {
+    Adapter.connect().catch(done).then(function() {
+      done();
+    });
+  });
+
+  it('Hooks should process passing data', function(done) {
+    const Query = Adapter.query('orm_test');
+
+    hooks.registerBeforeHook('insert', function(value) {
+      value.before = 'before';
+      return value;
+    });
+
+    hooks.registerAfterHook('find', function(value) {
+      value.after = 'after';
+      return value;
+    });
+
+    Query.insert({
+      key: 'value',
+    }).exec();
+
+    Query.findOne({
+      key: 'value',
+    }).exec().then(function(data) {
+      expect(data.key).to.be.ok.and.to.be.eql('value');
+      expect(data.before).to.be.ok.and.to.be.eql('before');
+      expect(data.after).to.be.ok.and.to.be.eql('after');
+      clearHooks('insert');
+      clearHooks('find')
+    });
+
+    Query.deleteMany({
+      key: 'value',
+    }).exec().then(function(data) {
+      Adapter.close();
+      done();
+    });
   });
 });
