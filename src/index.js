@@ -28,6 +28,16 @@ function getPort(port) {
 }
 
 /**
+ * Return database name from options or default
+ *
+ * @access  private
+ * @param   { String }  [db='test']  DB to connect to mongod
+ */
+function getDbUrl(db) {
+  return db || 'test';
+}
+
+/**
  * Return auth string if auth is passed
  *
  * @access  private
@@ -63,7 +73,7 @@ function buildConnectionUrl(options) {
     slashes: true,
     hostname: getHost(options.host),
     port: getPort(options.port),
-    path: options.database,
+    path: getDbUrl(options.database),
     //auth: getAuth(options.auth),
   });
 }
