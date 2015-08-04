@@ -1,7 +1,7 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, ifElse, is } from 'ramda';
+import { partial, partialRight, compose, ifElse, is } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
 
@@ -101,12 +101,21 @@ function QueryFactory(db, collectionName) {
   /**
    * Return executor
    */
-  function ExecuteFactory(queryFunc, hookName) {
+  function ExecuteFactory(queryFunc, arg) {
     return {
       exec: function() {
-        return queryFunc();
+        return Promise.resolve(arg)
+          .then(queryFunc);
       },
     };
+  }
+
+  function composer(func, hookName) {
+    return compose(
+      hooks.execAfterHooks(hookName),
+      func,
+      hooks.execBeforeHooks(hookName)
+      );
   }
 
   /**
@@ -115,12 +124,7 @@ function QueryFactory(db, collectionName) {
    * @access private
    */
   function findOne(queryObj, opts) {
-    return function() {
-      return Promise.resolve(queryObj)
-        .then(function(data) {
-          return db.collection(collectionName).findOne(data, opts ? opts : {});
-        });
-    };
+    return db.collection(collectionName).findOne(queryObj, opts ? opts : {});
   }
 
   /**
@@ -129,29 +133,33 @@ function QueryFactory(db, collectionName) {
    * @access private
    */
   function find(queryObj, opts) {
-    return function() {
-      return Promise.resolve(queryObj)
-        .then(function(data) {
-          return db.collection(collectionName).find(data, opts ? opts : {});
-        })
-        .then(function(cursor) {
-          return cursor.toArray();
-        });
-    };
+    return Promise.resolve(queryObj)
+      .then(function(data) {
+        return db.collection(collectionName).find(data, opts ? opts : {});
+      })
+      .then(function(cursor) {
+        return cursor.toArray();
+      });
   }
 
   /**
    * Find one document in database
    */
   query.findOne = function(queryObj, opts) {
-    return ExecuteFactory(findOne(queryObj, opts), 'find');
+    return ExecuteFactory(
+      composer(partialRight(findOne, opts), 'find'),
+      queryObj
+      );
   };
 
   /**
    * Find many documents in database
    */
   query.find = function(queryObj, opts) {
-    return ExecuteFactory(find(queryObj, opts), 'find');
+    return ExecuteFactory(
+      composer(partialRight(find, opts), 'find'),
+      queryObj
+      );
   };
 
 
@@ -160,14 +168,8 @@ function QueryFactory(db, collectionName) {
    *
    * @access  private
    */
-  function createOne(doc, opts) {
-    return function() {
-      return Promise.resolve(doc)
-        .then(function(data) {
-          return db.collection(collectionName)
-            .insertOne(data, opts ? opts : {});
-        });
-    };
+  function insertOne(doc, opts) {
+    return db.collection(collectionName).insertOne(doc, opts ? opts : {});
   }
 
   /**
@@ -175,14 +177,8 @@ function QueryFactory(db, collectionName) {
    *
    * @access  private
    */
-  function createMany(docs, opts) {
-    return function() {
-      return Promise.resolve(docs)
-        .then(function(data) {
-          return db.collection(collectionName)
-            .insertMany(data, opts ? opts : {});
-        });
-    };
+  function insertMany(docs, opts) {
+    return db.collection(collectionName).insertMany(docs, opts ? opts : {});
   }
 
   /**
@@ -190,12 +186,17 @@ function QueryFactory(db, collectionName) {
    */
   query.insert = function(docs, opts) {
     return ExecuteFactory(
-      ifElse(function() {
-        return is(Array, docs);
-      },
-      createMany(docs, opts),
-      createOne(docs, opts)
-      ), 'create');
+      composer(
+        ifElse(function() {
+            return is(Array, docs);
+          },
+          partialRight(insertMany, opts),
+          partialRight(insertOne, opts)
+        ),
+        'insert'
+      ),
+      docs
+    );
   };
 
   /**
@@ -204,13 +205,8 @@ function QueryFactory(db, collectionName) {
    * @access  private
    */
   function updateOne(queryObj, updates, opts) {
-    return function() {
-      return Promise.resolve(queryObj)
-        .then(function(data) {
-          return  db.collection(collectionName)
-            .updateOne(data, updates, opts ? opts : {});
-        });
-    };
+    return db.collection(collectionName)
+      .updateOne(queryObj, updates, opts ? opts : {});
   }
 
   /**
@@ -219,27 +215,28 @@ function QueryFactory(db, collectionName) {
    * @access  private
    */
   function updateMany(queryObj, updates, opts) {
-    return function() {
-      return Promise.resolve(queryObj)
-        .then(function(data) {
-          return  db.collection(collectionName)
-            .updateMany(data, updates, opts ? opts : {});
-        });
-    };
+    return db.collection(collectionName)
+      .updateMany(queryObj, updates, opts ? opts : {});
   }
 
   /**
    * Update one document in database
    */
   query.updateOne = function(queryObj, updates, opts) {
-    return ExecuteFactory(updateOne(queryObj, updates, opts), 'update');
+    return ExecuteFactory(
+        composer(partialRight(updateOne, updates, opts), 'update'),
+        queryObj
+      );
   };
 
   /**
    * Update many documents in database
    */
   query.updateMany = function(queryObj, updates, opts) {
-    return ExecuteFactory(updateMany(queryObj, updates, opts), 'update');
+    return ExecuteFactory(
+      composer(partialRight(updateMany, updates, opts), 'update'),
+      queryObj
+    );
   };
 
   /**
@@ -248,13 +245,7 @@ function QueryFactory(db, collectionName) {
    * @access  private
    */
   function deleteOne(queryObj, opts) {
-    return function() {
-      return Promise.resolve(queryObj)
-        .then(function(data) {
-          return  db.collection(collectionName)
-            .deleteOne(data, opts ? opts : {});
-        });
-    };
+    return db.collection(collectionName).deleteOne(queryObj, opts ? opts : {});
   }
 
   /**
@@ -263,27 +254,27 @@ function QueryFactory(db, collectionName) {
    * @access  private
    */
   function deleteMany(queryObj, opts) {
-    return function() {
-      return Promise.resolve(queryObj)
-        .then(function(data) {
-          return  db.collection(collectionName)
-            .deleteMany(data, opts ? opts : {});
-        });
-    };
+    return db.collection(collectionName).deleteMany(queryObj, opts ? opts : {});
   }
 
   /**
    * Delete one document in database
    */
   query.deleteOne = function(queryObj, opts) {
-    return ExecuteFactory(deleteOne(queryObj, opts), 'delete');
+    return ExecuteFactory(
+      composer(partialRight(deleteOne, opts), 'delete'),
+      queryObj
+      );
   };
 
   /**
    * Delete many documents in database
    */
   query.deleteMany = function(queryObj, opts) {
-    return ExecuteFactory(deleteMany(queryObj, opts), 'delete');
+    return ExecuteFactory(
+      composer(partialRight(deleteMany, opts), 'delete'),
+      queryObj
+      );
   };
 
   return query;
