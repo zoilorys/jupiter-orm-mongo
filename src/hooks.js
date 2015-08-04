@@ -22,26 +22,41 @@ function hooksManager() {
 
   const controller = {};
 
-  controller.registerHook = function(name, hook) {
-    const args = name.split(' ');
-    hooks[args[0]][args[1]].push(hook);
+  controller.registerBeforeHook = function(name, hook) {
+    hooks[name]['before'].push(hook);
     return this;
   };
 
-  controller.execHooks = function(prefix) {
-    return function(suffix) {
-      return function(value) {
-        return isEmpty(hooks[prefix][suffix]) ? value : hooks[prefix][suffix]
-          .reduce(function(value, func) {
-            return func(value);
-          }, value);
-      };
+  controller.registerAfterHook = function(name, hook) {
+    hooks[name]['after'].push(hook);
+    return this;
+  };
+
+  controller.execBeforeHooks = function(name) {
+    return function(value) {
+      return isEmpty(hooks[name]['before']) ? value : hooks[name]['before']
+        .reduce(function(value, func) {
+          return func(value);
+        }, value);
     };
   };
 
-  controller.clearHooks = function(name) {
-    const args = name.split(' ');
-    hooks[args[0]][args[1]].length = 0;
+  controller.execAfterHooks = function(name) {
+    return function(value) {
+      return isEmpty(hooks[name]['after']) ? value : hooks[name]['after']
+        .reduce(function(value, func) {
+          return func(value);
+        }, value);
+    };
+  };
+
+  controller.clearBeforeHooks = function(name) {
+    hooks[name]['before'].length = 0;
+    return this;
+  }
+
+  controller.clearAfterHooks = function(name) {
+    hooks[name]['after'].length = 0;
     return this;
   }
 
