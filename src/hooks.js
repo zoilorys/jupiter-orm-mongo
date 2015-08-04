@@ -2,7 +2,7 @@ import { isEmpty } from 'ramda';
 
 function hooksManager() {
   const hooks = {
-    create: {
+    insert: {
       before: [],
       after: [],
     },
@@ -50,13 +50,10 @@ function hooksManager() {
     };
   };
 
-  controller.clearBeforeHooks = function(name) {
-    hooks[name]['before'].length = 0;
-    return this;
-  }
-
-  controller.clearAfterHooks = function(name) {
-    hooks[name]['after'].length = 0;
+  controller.clearHooks = function(name) {
+    Object.keys(hooks[name]).map(function(item) {
+      hooks[name][item].length = 0;
+    });
     return this;
   }
 
