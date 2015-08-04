@@ -47,7 +47,7 @@ describe('Connection behavior', function() {
     const connectedFactory = Factory({
       database: 'test',
       host: 'localhost',
-      port: 27017
+      port: 27017,
     });
 
     connectedFactory.connect().catch(done).then(function(adapter) {
@@ -160,113 +160,5 @@ describe('Delete documents', function() {
     });
 
     expect(result).to.be.instanceof(Promise);
-  });
-});
-
-describe('Test hooks - before create', function() {
-  const Adapter = Factory({
-    database: 'test',
-  });
-
-  before(function(done) {
-    Adapter.connect().catch(done).then(function() {
-      done();
-    });
-  });
-
-  it('should register new hooks', function() {
-    const testHook = function(value) {
-      value.hook = 'hook was here';
-      return value;
-    }
-
-    hooks.registerHook('create before', testHook);
-
-    expect(hooks.execHooks('create')('before')({})).to.be.ok.and.to.be.eql({ hook: 'hook was here' });
-  });
-
-  it('hook should process the data, that would be inserted', function(done) {
-    const Query = Adapter.query('orm_test');
-
-    Query.insert({
-      key: 'value',
-    }).exec();
-
-    Adapter.query('orm_test').findOne({
-      key: 'value',
-    }).exec().then(function(data) {
-      expect(data.key).to.be.ok.and.to.be.eql('value');
-      expect(data.hook).to.be.ok.and.to.be.eql('hook was here');
-      done();
-    });
-
-    // Cleanup
-    Query.deleteMany({
-      key: 'value',
-    }).exec().then(function(d) {
-      Adapter.close();
-    });
-
-  });
-
-  it('clearHooks() should clear created hooks', function() {
-
-    hooks.clearHooks('create before');
-
-    expect(hooks.execHooks('create')('before')({})).to.be.ok.and.to.be.eql({});
-  });
-});
-
-describe('Test hooks - after find', function() {
-  const Adapter = Factory({
-    database: 'test',
-  });
-
-  before(function(done) {
-    Adapter.connect().catch(done).then(function() {
-      done();
-    });
-  });
-
-  it('should register new hooks', function() {
-    const testHook = function(value) {
-      value.hook = 'hook was here';
-      return value;
-    }
-
-    hooks.registerHook('find after', testHook);
-
-    expect(hooks.execHooks('find')('after')({})).to.be.ok.and.to.be.eql({ hook: 'hook was here' });
-  });
-
-  it('hook should process the data, that was found', function(done) {
-    const Query = Adapter.query('orm_test');
-
-    Query.insert({
-      key: 'value',
-    }).exec();
-
-    Adapter.query('orm_test').findOne({
-      key: 'value',
-    }).exec().then(function(data) {
-      expect(data.key).to.be.ok.and.to.be.eql('value');
-      expect(data.hook).to.be.ok.and.to.be.eql('hook was here');
-      done();
-    });
-
-    // Cleanup
-    Query.deleteMany({
-      key: 'value',
-    }).exec().then(function(d) {
-      Adapter.close();
-    });
-
-  });
-
-  it('clearHooks() should clear created hooks', function() {
-
-    hooks.clearHooks('find after');
-
-    expect(hooks.execHooks('find')('after')({})).to.be.ok.and.to.be.eql({});
   });
 });

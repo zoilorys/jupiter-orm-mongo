@@ -1,7 +1,7 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, partialRight, ifElse, is } from 'ramda';
+import { partial, ifElse, is } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
 
@@ -64,9 +64,9 @@ function getAuth(auth) {
  * password options
  */
 function buildConnectionUrl(options) {
-  /*if (options.user && options.password) {
+  if (options.user && options.password) {
     options.auth = options.user + ':' + options.password;
-  }*/
+  }
 
   return formatUrl({
     protocol: 'mongodb',
@@ -74,7 +74,7 @@ function buildConnectionUrl(options) {
     hostname: getHost(options.host),
     port: getPort(options.port),
     path: getDbUrl(options.database),
-    //auth: getAuth(options.auth),
+    auth: getAuth(options.auth),
   });
 }
 
@@ -104,8 +104,7 @@ function QueryFactory(db, collectionName) {
   function ExecuteFactory(queryFunc, hookName) {
     return {
       exec: function() {
-        return queryFunc()
-          .then(hooks.execHooks(hookName)('after'));
+        return queryFunc();
       },
     };
   }
@@ -118,7 +117,6 @@ function QueryFactory(db, collectionName) {
   function findOne(queryObj, opts) {
     return function() {
       return Promise.resolve(queryObj)
-        .then(hooks.execHooks('find')('before'))
         .then(function(data) {
           return db.collection(collectionName).findOne(data, opts ? opts : {});
         });
@@ -133,7 +131,6 @@ function QueryFactory(db, collectionName) {
   function find(queryObj, opts) {
     return function() {
       return Promise.resolve(queryObj)
-        .then(hooks.execHooks('find')('before'))
         .then(function(data) {
           return db.collection(collectionName).find(data, opts ? opts : {});
         })
@@ -166,9 +163,9 @@ function QueryFactory(db, collectionName) {
   function createOne(doc, opts) {
     return function() {
       return Promise.resolve(doc)
-        .then(hooks.execHooks('create')('before'))
         .then(function(data) {
-          return db.collection(collectionName).insertOne(data, opts ? opts : {});
+          return db.collection(collectionName)
+            .insertOne(data, opts ? opts : {});
         });
     };
   }
@@ -181,9 +178,9 @@ function QueryFactory(db, collectionName) {
   function createMany(docs, opts) {
     return function() {
       return Promise.resolve(docs)
-        .then(hooks.execHooks('create')('before'))
         .then(function(data) {
-          return db.collection(collectionName).insertMany(data, opts ? opts : {});
+          return db.collection(collectionName)
+            .insertMany(data, opts ? opts : {});
         });
     };
   }
@@ -193,8 +190,12 @@ function QueryFactory(db, collectionName) {
    */
   query.insert = function(docs, opts) {
     return ExecuteFactory(
-      docs instanceof Array ? createMany(docs, opts) : createOne(docs, opts),
-      'create');
+      ifElse(function() {
+        return is(Array, docs);
+      },
+      createMany(docs, opts),
+      createOne(docs, opts)
+      ), 'create');
   };
 
   /**
@@ -205,9 +206,9 @@ function QueryFactory(db, collectionName) {
   function updateOne(queryObj, updates, opts) {
     return function() {
       return Promise.resolve(queryObj)
-        .then(hooks.execHooks('update')('before'))
         .then(function(data) {
-          return  db.collection(collectionName).updateOne(data, updates, opts ? opts : {});
+          return  db.collection(collectionName)
+            .updateOne(data, updates, opts ? opts : {});
         });
     };
   }
@@ -220,9 +221,9 @@ function QueryFactory(db, collectionName) {
   function updateMany(queryObj, updates, opts) {
     return function() {
       return Promise.resolve(queryObj)
-        .then(hooks.execHooks('update')('before'))
         .then(function(data) {
-          return  db.collection(collectionName).updateMany(data, updates, opts ? opts : {});
+          return  db.collection(collectionName)
+            .updateMany(data, updates, opts ? opts : {});
         });
     };
   }
@@ -249,9 +250,9 @@ function QueryFactory(db, collectionName) {
   function deleteOne(queryObj, opts) {
     return function() {
       return Promise.resolve(queryObj)
-        .then(hooks.execHooks('delete')('before'))
         .then(function(data) {
-          return  db.collection(collectionName).deleteOne(data, opts ? opts : {});
+          return  db.collection(collectionName)
+            .deleteOne(data, opts ? opts : {});
         });
     };
   }
@@ -264,9 +265,9 @@ function QueryFactory(db, collectionName) {
   function deleteMany(queryObj, opts) {
     return function() {
       return Promise.resolve(queryObj)
-        .then(hooks.execHooks('delete')('before'))
         .then(function(data) {
-          return  db.collection(collectionName).deleteMany(data, opts ? opts : {});
+          return  db.collection(collectionName)
+            .deleteMany(data, opts ? opts : {});
         });
     };
   }
