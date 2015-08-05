@@ -74,10 +74,17 @@ describe('Create documents', function() {
       key: 'value'
     }).exec()).to.be.instanceof(Promise);
 
+    expect(Query.insert([{
+      key: 'value'
+    },
+    {
+      key: 'value'
+    }]).exec()).to.be.instanceof(Promise);
+
   });
 });
 
-describe('Read documents', function(done) {
+describe('Read documents', function() {
   const Adapter = Factory({
     database: 'test',
   });
@@ -88,20 +95,27 @@ describe('Read documents', function(done) {
     });
   });
 
-  it('should return Promise and be equal inserted data', function() {
+  it('should return Promise and be equal inserted data', function(done) {
     const Query = Adapter.query('orm_test');
 
     Query.find({
       key: 'value'
     }).exec().then(function(data) {
+      expect(data.slice).to.be.ok.and.to.be.a('function');
+      expect(data[0].key).to.be.ok.and.to.be.eql('value');
+    });
+
+    Query.findOne({
+      key: 'value'
+    }).exec().then(function(data) {
       expect(data.key).to.be.ok.and.to.be.eql('value');
       Adapter.close();
       done();
-    })
+    });
   });
 });
 
-describe('Update documents', function() {
+describe('Update documents', function(done) {
   const Adapter = Factory({
     database: 'test',
   });
@@ -116,11 +130,21 @@ describe('Update documents', function() {
     const Query = Adapter.query('orm_test');
 
     Promise.resolve(null).then(function() {
-      const result = Query.updateOne({
+      const result = Query.updateMany({
         key: 'value',
       }, {
         $set: {
           param: 'value',
+        }
+      }).exec();
+      expect(result).to.be.instanceof(Promise);
+      return result;
+    }).then(function() {
+      const result = Query.updateOne({
+        key: 'value',
+      }, {
+        $set: {
+          only: 'value',
         }
       }).exec();
       expect(result).to.be.instanceof(Promise);
@@ -131,6 +155,7 @@ describe('Update documents', function() {
       }).exec().then(function(data) {
         expect(data.key).to.be.ok.and.to.be.eql('value');
         expect(data.param).to.be.ok.and.to.be.eql('value');
+        expect(data.only).to.be.ok.and.to.be.eql('value');
         Adapter.close();
         done();
       });
@@ -138,7 +163,7 @@ describe('Update documents', function() {
   });
 });
 
-describe('Delete documents', function() {
+describe('Delete documents', function(done) {
   const Adapter = Factory({
     database: 'test',
   });
@@ -152,14 +177,26 @@ describe('Delete documents', function() {
   it('should return Promise and data must be deleted', function(done) {
     const Query = Adapter.query('orm_test');
 
-    const result = Query.deleteMany({
-      key: 'value',
-    }).exec().then(function(data) {
-      expect(data.deletedCount).to.be.ok.and.to.be.eql(1);
-      expect(result).to.be.instanceof(Promise);
-      Adapter.close();
-      done();
-    });
+    Promise.resolve(null)
+      .then(function() {
+        const result = Query.deleteOne({
+          key: 'value',
+        }).exec().then(function(data) {
+          expect(data.deletedCount).to.be.ok.and.to.be.eql(1);
+          expect(result).to.be.instanceof(Promise);
+        });
+      }).then(function() {
+        const result = Query.deleteMany({
+          key: 'value',
+        }).exec().then(function(data) {
+          expect(data.deletedCount).to.be.ok.and.to.be.eql(2);
+          expect(result).to.be.instanceof(Promise);
+          Adapter.close();
+          done();
+        });
+      })
+
+
   });
 });
 
@@ -181,7 +218,14 @@ describe('Hooks test', function() {
       value.before = 'before';
       return value;
     });
+    hooks.registerAfterHook('insert', function(value) {
+      return value.insertedCount;
+    });
 
+    hooks.registerBeforeHook('find', function(value) {
+      value.key = 'value';
+      return value;
+    });
     hooks.registerAfterHook('find', function(value) {
       value.after = 'after';
       return value;
@@ -189,11 +233,11 @@ describe('Hooks test', function() {
 
     Query.insert({
       key: 'value',
-    }).exec();
-
-    Query.findOne({
-      key: 'value',
     }).exec().then(function(data) {
+      expect(data).to.be.ok.and.to.be.eql(1);
+    });
+
+    Query.findOne({}).exec().then(function(data) {
       expect(data.key).to.be.ok.and.to.be.eql('value');
       expect(data.before).to.be.ok.and.to.be.eql('before');
       expect(data.after).to.be.ok.and.to.be.eql('after');
