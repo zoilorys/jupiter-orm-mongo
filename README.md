@@ -1,5 +1,7 @@
 # jupiter-orm-mongo
 
+[![Coverage Status](https://coveralls.io/repos/zoilorys/jupiter-orm-mongo/badge.svg?branch=master&service=github)](https://coveralls.io/github/zoilorys/jupiter-orm-mongo?branch=master) [![Build Status](https://travis-ci.org/zoilorys/jupiter-orm-mongo.svg?branch=master)](https://travis-ci.org/zoilorys/jupiter-orm-mongo)
+
 ## API
 
 #### .Factory(options)

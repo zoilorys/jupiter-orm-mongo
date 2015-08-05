@@ -5,4 +5,4 @@ node_js:
 services:
   - mongod
 after_success:
-  - isparta cover _mocha --include src/*.js --report lcovonly -- test/*.js -r babel/register && cat ./coverage/lcov.info | coveralls && rm -r ./coverage
+  - ./node_modules/.bin/isparta cover ./node_modules/.bin/_mocha --include src/*.js --report lcovonly -- test/*.js -r babel/register && cat ./coverage/lcov.info | coveralls && rm -r ./coverage
