@@ -1,7 +1,7 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, partialRight, pipe, ifElse, is } from 'ramda';
+import { partial, partialRight, compose, ifElse, is } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
 
@@ -111,10 +111,10 @@ function QueryFactory(db, collectionName) {
   }
 
   function composer(func, hookName) {
-    return pipe(
-      hooks.execBeforeHooks(hookName),
+    return compose(
+      hooks.execAfterHooks(hookName),
       func,
-      hooks.execAfterHooks(hookName)
+      hooks.execBeforeHooks(hookName)
       );
   }
 
