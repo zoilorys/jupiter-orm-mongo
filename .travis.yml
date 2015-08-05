@@ -4,5 +4,6 @@ node_js:
   - "iojs"
 services:
   - mongod
+sudo: required
 after_success:
   - ./node_modules/.bin/isparta cover ./node_modules/.bin/_mocha --include src/*.js --report lcovonly -- test/*.js -r babel/register && cat ./coverage/lcov.info | coveralls && rm -r ./coverage
