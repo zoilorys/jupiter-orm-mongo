@@ -97,20 +97,23 @@ describe('Read documents', function() {
 
   it('should return Promise and be equal inserted data', function(done) {
     const Query = Adapter.query('orm_test');
-
-    Query.find({
-      key: 'value'
-    }).exec().then(function(data) {
-      expect(data.slice).to.be.ok.and.to.be.a('function');
-      expect(data[0].key).to.be.ok.and.to.be.eql('value');
-    });
-
-    Query.findOne({
-      key: 'value'
-    }).exec().then(function(data) {
-      expect(data.key).to.be.ok.and.to.be.eql('value');
-      Adapter.close();
-      done();
+    Promise.resolve(null)
+    .then(function() {
+      Query.find({
+        key: 'value'
+      }).exec().then(function(data) {
+        expect(data.slice).to.be.ok.and.to.be.a('function');
+        expect(data[0].key).to.be.ok.and.to.be.eql('value');
+      });
+    })
+    .then(function() {
+      Query.findOne({
+        key: 'value'
+      }).exec().then(function(data) {
+        expect(data.key).to.be.ok.and.to.be.eql('value');
+        Adapter.close();
+        done();
+      });
     });
   });
 });
@@ -130,15 +133,13 @@ describe('Update documents', function(done) {
     const Query = Adapter.query('orm_test');
 
     Promise.resolve(null).then(function() {
-      const result = Query.updateMany({
+      Query.updateMany({
         key: 'value',
       }, {
         $set: {
           param: 'value',
         }
       }).exec();
-      expect(result).to.be.instanceof(Promise);
-      return result;
     }).then(function() {
       const result = Query.updateOne({
         key: 'value',
