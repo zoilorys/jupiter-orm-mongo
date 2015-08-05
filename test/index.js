@@ -45,8 +45,6 @@ describe('Connection behavior', function() {
   it('should be connected and disconnected', function(done) {
     const connectedFactory = Factory({
       database: 'test',
-      host: 'localhost',
-      port: 27017,
     });
 
     connectedFactory.connect().catch(done).then(function(adapter) {
@@ -141,20 +139,17 @@ describe('Update documents', function(done) {
         }
       }).exec();
     }).then(function() {
-      const result = Query.updateOne({
+      return Query.updateOne({
         key: 'value',
       }, {
         $set: {
           only: 'value',
         }
       }).exec();
-      expect(result).to.be.instanceof(Promise);
-      return result;
     }).then(function() {
-      Adapter.query('orm_test').findOne({
+      Query.findOne({
         key: 'value',
       }).exec().then(function(data) {
-        expect(data.key).to.be.ok.and.to.be.eql('value');
         expect(data.param).to.be.ok.and.to.be.eql('value');
         expect(data.only).to.be.ok.and.to.be.eql('value');
         Adapter.close();
@@ -195,9 +190,7 @@ describe('Delete documents', function(done) {
           Adapter.close();
           done();
         });
-      })
-
-
+      });
   });
 });
 
