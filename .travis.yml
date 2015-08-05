@@ -1,0 +1,8 @@
+language: node_js
+node_js:
+  - "0.12"
+  - "iojs"
+services:
+  - mongod
+after_success:
+  - isparta cover _mocha --include src/*.js --report lcovonly -- test/*.js -r babel/register && cat ./coverage/lcov.info | coveralls && rm -r ./coverage
