@@ -99,7 +99,7 @@ describe('Read documents', function() {
     const Query = Adapter.query('orm_test');
     Promise.resolve(null)
     .then(function() {
-      Query.find({
+      return Query.find({
         key: 'value'
       }).exec().then(function(data) {
         expect(data.slice).to.be.ok.and.to.be.a('function');
@@ -133,7 +133,7 @@ describe('Update documents', function(done) {
     const Query = Adapter.query('orm_test');
 
     Promise.resolve(null).then(function() {
-      Query.updateMany({
+      return Query.updateMany({
         key: 'value',
       }, {
         $set: {
