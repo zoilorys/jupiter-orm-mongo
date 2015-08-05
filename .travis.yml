@@ -3,7 +3,7 @@ node_js:
   - "0.12"
   - "iojs"
 before_script:
-  - sleep 15
+  - sleep 100
 services:
   - mongod
 sudo: required
