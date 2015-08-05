@@ -137,7 +137,9 @@ describe('Update documents', function(done) {
         $set: {
           param: 'value',
         }
-      }).exec();
+      }).exec().then(function(data) {
+        expect(data.modifiedCount).to.be.ok.and.to.be.not.equal(0);
+      });
     }).then(function() {
       return Query.updateOne({
         key: 'value',
@@ -145,13 +147,8 @@ describe('Update documents', function(done) {
         $set: {
           only: 'value',
         }
-      }).exec();
-    }).then(function() {
-      Query.findOne({
-        key: 'value',
       }).exec().then(function(data) {
-        expect(data.param).to.be.ok.and.to.be.eql('value');
-        expect(data.only).to.be.ok.and.to.be.eql('value');
+        expect(data.modifiedCount).to.be.ok.and.to.be.not.equal(0);
         Adapter.close();
         done();
       });
