@@ -1,7 +1,7 @@
 
 import { format as formatUrl } from 'url';
 
-import { partial, partialRight, compose, ifElse, is } from 'ramda';
+import { partial, partialRight, pipe, ifElse, is } from 'ramda';
 import { Promise } from 'es6-promise';
 import { MongoClient } from 'mongodb';
 
@@ -111,10 +111,10 @@ function QueryFactory(db, collectionName) {
   }
 
   function composer(func, hookName) {
-    return compose(
-      hooks.execAfterHooks(hookName),
+    return pipe(
+      hooks.execBeforeHooks(hookName),
       func,
-      hooks.execBeforeHooks(hookName)
+      hooks.execAfterHooks(hookName)
       );
   }
 
@@ -133,13 +133,8 @@ function QueryFactory(db, collectionName) {
    * @access private
    */
   function find(queryObj, opts) {
-    return Promise.resolve(queryObj)
-      .then(function(data) {
-        return db.collection(collectionName).find(data, opts ? opts : {});
-      })
-      .then(function(cursor) {
-        return cursor.toArray();
-      });
+    return db.collection(collectionName)
+      .find(queryObj, opts ? opts : {}).toArray();
   }
 
   /**
