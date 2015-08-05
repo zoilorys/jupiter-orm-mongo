@@ -1,6 +1,6 @@
 # jupiter-orm-mongo
 
-[![Coverage Status][npm-url] [![Build Status][npm-url]
+[![Build Status](https://travis-ci.org/zoilorys/jupiter-orm-mongo.svg?branch=master)](https://travis-ci.org/zoilorys/jupiter-orm-mongo)
 
 ## API
 
