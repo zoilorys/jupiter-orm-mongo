@@ -115,23 +115,25 @@ describe('Update documents', function() {
   it('should return Promise and data must be updated', function(done) {
     const Query = Adapter.query('orm_test');
 
-    const result = Query.updateOne({
-      key: 'value',
-    }, {
-      $set: {
-        param: 'value',
-      }
-    }).exec();
-
-    expect(result).to.be.instanceof(Promise);
-
-    Adapter.query('orm_test').findOne({
-      key: 'value',
-    }).exec().then(function(data) {
-      expect(data.key).to.be.ok.and.to.be.eql('value');
-      expect(data.param).to.be.ok.and.to.be.eql('value');
-      Adapter.close();
-      done();
+    Promise.resolve(null).then(function() {
+      const result = Query.updateOne({
+        key: 'value',
+      }, {
+        $set: {
+          param: 'value',
+        }
+      }).exec();
+      expect(result).to.be.instanceof(Promise);
+      return result;
+    }).then(function() {
+      Adapter.query('orm_test').findOne({
+        key: 'value',
+      }).exec().then(function(data) {
+        expect(data.key).to.be.ok.and.to.be.eql('value');
+        expect(data.param).to.be.ok.and.to.be.eql('value');
+        Adapter.close();
+        done();
+      });
     });
   });
 });
