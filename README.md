@@ -9,12 +9,12 @@
 Returns adapter API object.
 
 **Arguments**<br />
-@param { Object } **options** object with properties for connection.
+{ Object } **options** - object with properties for connection.
 
 Available options:<br />
-{ String } **host**      host name without protocol, e.g. '127.0.0.1'<br />
-{ Number } **port**       port of host server to connect<br />
-{ String } **database**  database name of DB to connect<br />
+{ String } **host** - host name without protocol, e.g. '127.0.0.1'<br />
+{ Number } **port** - port of host server to connect<br />
+{ String } **database** - database name of DB to connect<br />
 
 **Example**
 ```javascript
@@ -42,14 +42,13 @@ let ORM = Factory({
 Returns Query interface of adapter for selected collection.
 
 **Arguments**<br />
-@param { String } **collection**   name of collection to query.
+{ String } **collection** - name of collection to query.
 
 **Example**
 ```javascript
 Factory({
   // options
-}).connect().then(function(ORM) {
-  ORM.query('collection')
+}).connect().query('collection')
     .find().exec()
     .then(console.log.bind(console));
 });
@@ -63,8 +62,7 @@ Closes current connection.
 ```javascript
 Factory({
   // options
-}).connect().then(function(ORM) {
-  ORM.query('collection').find().exec().then(function(result) {
+}).connect().query('collection').find().exec().then(function(result) {
     doSomethingWith(result);
     ORM.close();
   });
@@ -79,8 +77,8 @@ Factory({
 Returns list of documents from collection, by query clause.
 
 **Arguments**<br />
-@param { Object } **query**    object, that contains query сonditions.<br />
-@param { Object } **opts**     options for search, e.g. sort, limit, skip.
+{ Object } **query** - object, that contains query сonditions.<br />
+{ Object } **opts** - options for search, e.g. sort, limit, skip.
 
 **Example**
 ```javascript
@@ -99,8 +97,8 @@ Query.find({
 Return document from collection, by query clause
 
 **Arguments**<br />
-@param { Object } **query**    object, that contains query сonditions.<br />
-@param { Object } **opts**     options for search, e.g. sort, limit, skip.
+{ Object } **query** - object, that contains query сonditions.<br />
+{ Object } **opts** - options for search, e.g. sort, limit, skip.
 
 **Example**
 ```javascript
@@ -118,8 +116,8 @@ Query.findOne({
 Insert one or many documents into collection
 
 **Arguments**<br />
-@param { Object | Array } **document**   document or documents list for inserting<br />
-@param { Object }         **opts**       additional options.
+{ Object | Array } **document** - document or documents list for inserting<br />
+{ Object }         **opts** - additional options.
 
 **Example**
 ```javascript
@@ -138,8 +136,8 @@ Query.insert([{key1: 'value1'}, {key2: 'value2'}])
 Remove one document from collection
 
 **Arguments**<br />
-@param { Object } **query**  selector clause for removing<br />
-@param { Object } **opts**   additional options.
+{ Object } **query** - selector clause for removing<br />
+{ Object } **opts** - additional options.
 
 **Example**
 ```javascript
@@ -156,8 +154,8 @@ Query.deleteOne({key: 'value'}).exec().then(console.log.bind(console));
 Remove many documents from collection
 
 **Arguments**<br />
-@param { Object } **query**  selector clause for removing<br />
-@param { Object } **opts**   additional options.
+{ Object } **query** -  selector clause for removing<br />
+{ Object } **opts** - additional options.
 
 **Example**
 ```javascript
@@ -174,9 +172,9 @@ Query.deleteMany({key: 'value'}).exec().then(console.log.bind(console));
 Update one document from collection
 
 **Arguments**<br />
-@param { Object } **query** selector clause for updating<br />
-@param { Object } **value** updated value for document<br />
-@param { Object } **opts**  additional options
+{ Object } **query** - selector clause for updating<br />
+{ Object } **value** - updated value for document<br />
+{ Object } **opts** - additional options
 
 **Example**
 ```javascript
@@ -193,9 +191,9 @@ Query.updateOne({key: 'value', { key: 'changedValue' }})
 Update all documents from collection
 
 **Arguments**<br />
-@param { Object } **filter** selector clause for updating<br />
-@param { Object } **values** updated value for documents<br />
-@param { Object } **opts**  additional options
+{ Object } **filter** - selector clause for updating<br />
+{ Object } **values** - updated value for documents<br />
+{ Object } **opts** - additional options
 
 **Example**
 ```javascript
