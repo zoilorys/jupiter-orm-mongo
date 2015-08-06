@@ -79,16 +79,6 @@ function buildConnectionUrl(options) {
 }
 
 /**
- * Create collection in database
- *
- * @param { MongoClient.Db }  db              Instance if database
- * @param { String }          collectionName  Name of collection
- */
-function createCollection(db, collectionName) {
-  return db.createCollection(collectionName);
-}
-
-/**
  * Return Query Interface
  *
  * @access  private
@@ -293,7 +283,6 @@ export function Factory(options) {
     return MongoClient.connect(
       buildConnectionUrl(options)
     ).then(function(db) {
-
       adapter.getDatabase = function() {
         return db;
       };
